@@ -11,7 +11,7 @@ var attr = (o, k, v) => o.setAttribute(k, v);
 var latlngbyzip = (zip,db) => db.filter(el=> el.zip == zip).length ?  [db.filter(el=> el.zip == zip)[0].lat, db.filter(el=> el.zip == zip)[0].lng] : null;
 var access_token = 'go4tgNEaqfvaPuekckNGcMSclpVZtPrQ';
 
-async function getSampleBallotDateValuesByZipcode(zip){
+async function getSampleBallotDateValuesByZipcode(access_token,zip){
   var res = await fetch(`https://ballotpedia.org/Sample_Ballot_Lookup#address=${zip}`);
   var text = await res.text();
   var doc = new DOMParser().parseFromString(text,'text/html');
@@ -20,6 +20,7 @@ async function getSampleBallotDateValuesByZipcode(zip){
   console.log(dateValues)
   if(dateValues && dateValues.length){
     var latlng = latlngbyzip(zip,fileArray);
+          console.log(latlng);
     if(latlng && latlng[0] && latlng[1]){ 
       var districtMatches = await getDistrictsByLatLng(access_token,encodeURIComponent(latlng.toString()));
       var districtIds = districtMatches.map(el=> el.id);
@@ -28,19 +29,20 @@ async function getSampleBallotDateValuesByZipcode(zip){
           var sb = await getSampleBallotByZip(access_token,dateValues[i],encodeURIComponent(districtIds.toString()));
           console.log(sb);
         }
-      }
-    }
-  }
+      }else{console.log('district Matches failed')}
+    }else{console.log('lat lng failed')}
+  }else{console.log('date values failed')}
 
 }
 
 async function getSampleBallotByZip(access_token,election_date,districts){
-  var res = await fetch(`https://api.ballotpedia.org/v3/api/sbl-results?access_token=${access_token}&districts=${districts}&election_date=${election_date}`);
+  var req = `https://api.ballotpedia.org/v3/api/sbl-results?access_token=${access_token}&districts=${districts}&election_date=${election_date}`;
+  console.log(req);
+  var res = await fetch(req);
   var d = await res.json();
-//   console.log(d);
+  console.log(d);
   return d;
 }
-
 
 async function getDistrictsByLatLng(access_token,latlng){
  var res = await fetch(`https://api.ballotpedia.org/v3/api/contains?access_token=${access_token}&point=${latlng}`);
@@ -48,5 +50,6 @@ async function getDistrictsByLatLng(access_token,latlng){
  console.log(d);
  return d;
 }
+
 
 getSampleBallotDateValuesByZipcode(access_token,'15758')
